@@ -25,4 +25,38 @@ plt.title('Circular autocorrelation of PRBS511')
 plt.xlabel("Shift K")
 plt.ylabel("r[k]")
 plt.show()
-    
+
+
+def best_subseq_autocorr(prbs511_bits, L=255):
+    N = len(prbs511_bits)  
+    best = None
+
+    for start in range(N):
+        window_bits = [prbs511_bits[(start + i) % N] for i in range(L)]
+        x = bits_to_pm1(window_bits)
+        r = cir_autocorr(x)
+
+        offpeak = np.max(np.abs(r[1:])) 
+        if (best is None) or (offpeak < best["offpeak"]):
+            best = {
+                "start": start,
+                "window_bits": window_bits,
+                "r": r,
+                "offpeak": offpeak,
+            }
+
+    return best
+
+best = best_subseq_autocorr(prbs511, L=255)
+
+print("Best start index:", best["start"])
+print("Best max |off-peak|:", best["offpeak"])
+print("r[0] =", best["r"][0])
+print("unique r values (sample):", np.unique(best["r"])[:20], "...")
+
+plt.figure()
+plt.stem(best["r"])
+plt.title(f"Best 255-bit subseq autocorr (start={best['start']}, max off-peak={best['offpeak']})")
+plt.xlabel("Shift k")
+plt.ylabel("r[k]")
+plt.show()
