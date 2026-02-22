@@ -3,14 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt 
 
 def cir_autocorr(pm1):
-    x = np.array(pm1, dtype=int) 
+    x = np.array(pm1) 
     N = len(x)
-    r = np.zeros(N, dtype=int)
+    r = np.zeros(N)
     for k in range(N):
-        r[k] = np.sum(x * np.roll(x, -k))
-    return r 
+        r[k] = np.sum(x * np.roll(x, k))
+    return r
 
-prbs511  = lfsr_prbs(n_bits=9,  tap_mask=0x110, seed=0b000000001)
+prbs511  = lfsr_prbs(n_bits=9,  tap_mask=0x110)
+
 x511 = bits_to_pm1(prbs511)
 print("x511 unique:", np.unique(x511))
 print("x511 sum:", np.sum(x511))
@@ -28,15 +29,16 @@ plt.show()
 
 
 def best_subseq_autocorr(prbs511_bits, L=255):
-    N = len(prbs511_bits)  
+    N = len(prbs511_bits)
     best = None
 
-    for start in range(N):
-        window_bits = [prbs511_bits[(start + i) % N] for i in range(L)]
+    for start in range(0, N - L + 1):
+        window_bits = prbs511_bits[start:start+L]
         x = bits_to_pm1(window_bits)
         r = cir_autocorr(x)
 
-        offpeak = np.max(np.abs(r[1:])) 
+        offpeak = np.max(np.abs(r[1:]))
+
         if (best is None) or (offpeak < best["offpeak"]):
             best = {
                 "start": start,
@@ -52,7 +54,6 @@ best = best_subseq_autocorr(prbs511, L=255)
 print("Best start index:", best["start"])
 print("Best max |off-peak|:", best["offpeak"])
 print("r[0] =", best["r"][0])
-print("unique r values (sample):", np.unique(best["r"])[:20], "...")
 
 plt.figure()
 plt.stem(best["r"])
